@@ -43,11 +43,11 @@ test(
   "Every named HTML page opens a real file preview and preserves the private authentication gate",
   { skip: !Window, timeout: 120000 },
   async (t) => {
-    for (const name of pages)
-      await t.test(name + ".html", async () => {
+    for (const { name, demo } of pages.flatMap(name => [{ name, demo: false }, { name, demo: true }]))
+      await t.test(name + ".html" + (demo ? " public demo" : ""), async () => {
         const html = await source(name + ".html"),
           window = new Window({
-            url: "file:///C:/portal/" + name + ".html",
+            url: demo ? "https://example.netlify.app/" + name + ".html?demo=1" : "file:///C:/portal/" + name + ".html",
             settings: {
               disableJavaScriptFileLoading: true,
               disableJavaScriptEvaluation: true,
@@ -68,6 +68,7 @@ test(
           location: window.location,
           FormData: window.FormData,
           URL,
+          URLSearchParams,
           Blob,
           Intl,
           Date,
@@ -91,8 +92,12 @@ test(
                 );
               },
             }).runInContext(context);
+            if (demo && match[1] === "js/auth.js") {
+              context.KC.auth.connect = async () => { throw Error("Demo must never connect to Supabase"); };
+            }
           }
           await new Promise((resolve) => setTimeout(resolve, 0));
+          if (!demo) {
           assert.match(
             window.document.querySelector("h1").textContent,
             /Welcome back/,
@@ -102,6 +107,10 @@ test(
             true,
           );
           window.document.querySelector("#preview-workspace").click();
+          } else {
+            assert.equal(window.document.querySelector("#login-form"), null);
+            assert.match(window.document.body.textContent, /Interface preview/);
+          }
           assert.doesNotMatch(
             window.document.querySelector("h1").textContent,
             /Opening|could not/,
@@ -120,7 +129,7 @@ test(
             supabaseUrl: "https://example.supabase.co",
             publishableKey: "TEST_ONLY",
           };
-          assert.equal(await context.KC.auth.connect(), null);
+          if (!demo) assert.equal(await context.KC.auth.connect(), null);
         } finally {
           clearTimeout(context.KC?.ui?.toast.timer);
           await window.happyDOM.abort();

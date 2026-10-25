@@ -1457,6 +1457,12 @@
       document.querySelector(".shell")?.classList.remove("nav-open");
   });
   async function start() {
+    // A shareable interface demonstration never connects to private records.
+    if (new URLSearchParams(location.search).get("demo") === "1") {
+      preview = true;
+      enterWorkspace();
+      return;
+    }
     const recoveryLink = location.hash.includes("type=recovery");
     try {
       client = await connect();
