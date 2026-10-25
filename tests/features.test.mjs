@@ -1,6 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import "./classic.mjs";
+
+test("New quotes expire 14 days after their document date, including month and year boundaries", () => {
+  for (const [date, expiry] of [["2026-10-25", "2026-11-08"], ["2026-12-25", "2027-01-08"], ["2028-02-20", "2028-03-05"]]) {
+    const draft = KC.quotes.createDraft("quote", {date, settings:{quote_valid_days:30}});
+    assert.equal(draft.body.expiry_date, expiry);
+    assert.match(draft.body.terms, /Scope of work/);
+    assert.match(draft.body.terms, /statutory warranties/);
+  }
+});
 test("Customer search includes all requested identifiers without merging duplicate names", () => {
   const c = {
     id: "c1",

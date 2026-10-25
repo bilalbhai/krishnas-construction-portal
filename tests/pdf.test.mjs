@@ -143,6 +143,11 @@ test("A4 vector PDFs, long scopes, paid and draft variants", async () => {
         },
         { ...ctx, payments: [], sample: false },
       ],
+      [
+        "credit-adjustment",
+        { ...base, body: { ...body, scope: [], use_signature: false, use_stamp: false } },
+        { ...ctx, sample: false, credit: { number: "KC-CN-TEST", created_at: "2026-10-25", reason: "TEST ONLY agreed adjustment", amount_cents: 1100, gst_cents: 100 } },
+      ],
     ]) {
       const bytes = new Uint8Array(
         await (await makePDF(doc, context)).arrayBuffer(),
