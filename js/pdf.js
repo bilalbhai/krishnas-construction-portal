@@ -18,6 +18,7 @@
       gold = rgb(0.76, 0.56, 0.26),
       light = rgb(0.96, 0.95, 0.93),
       charcoal = rgb(0.12, 0.12, 0.12);
+    const grid = rgb(0.77, 0.74, 0.68);
     const sample = ctx.sample,
       settings = ctx.settings || {},
       b = d.body || {},
@@ -129,19 +130,27 @@
         gap = 3,
       } = {},
     ) {
-      const lines = wrap(s, max, size, font);
-      for (const line of lines) {
-        ensure(size + 8);
-        text(line, x, y, size, font, color);
-        y -= size + 5;
+      const lines = wrap(s, max - 20, size, font);
+      let offset = 0;
+      while (offset < lines.length) {
+        ensure(size + 22);
+        const capacity = Math.max(1, Math.floor((y - 79) / (size + 4)));
+        const chunk = lines.slice(offset, offset + capacity);
+        const height = chunk.length * (size + 4) + 12;
+        page.drawRectangle({ x, y: y - height + 5, width: max, height, borderColor: grid, borderWidth: 0.55 });
+        chunk.forEach((line, n) => text(line, x + 10, y - 8 - n * (size + 4), size, /^\d+\. [A-Z]/.test(line) ? bold : font, color));
+        y -= height;
+        offset += chunk.length;
+        if (offset < lines.length) newPage();
       }
       y -= gap;
     }
     function section(s) {
       ensure(55);
-      y -= 8;
-      text(s.toUpperCase(), 40, y, 9, bold, gold);
-      y -= 15;
+      y -= 5;
+      page.drawRectangle({x:40,y:y-20,width:515,height:24,color:light,borderColor:grid,borderWidth:0.55});
+      text(s.toUpperCase(), 50, y - 12, 9, bold, ink);
+      y -= 25;
     }
     function rule() {
       page.drawLine({
@@ -157,6 +166,10 @@
       if (grand) {
         y -= 4;
         page.drawRectangle({x: 294, y: y - 12, width: 261, height: 34, color: charcoal});
+      }
+      else {
+        page.drawRectangle({x:294,y:y-7,width:261,height:18,borderColor:grid,borderWidth:0.5});
+        page.drawLine({start:{x:462,y:y-7},end:{x:462,y:y+11},color:grid,thickness:0.5});
       }
       text(label, grand ? 306 : 300, y, grand ? 10 : 9, grand ? bold : regular, grand ? rgb(1,1,1) : muted);
       right(value, 545, y, grand ? 13 : 9, grand ? bold : regular, grand ? rgb(0.91,0.73,0.44) : ink);
@@ -179,15 +192,15 @@
     if (d.kind === "quote" && b.expiry_date) right("Valid until  " + dateLabel(b.expiry_date),555,712,9,regular,rgb(0.88,0.88,0.88));
     if (d.kind === "invoice" && b.due_date && !ctx.credit) right("Payment due  " + dateLabel(b.due_date),555,712,9,regular,rgb(0.88,0.88,0.88));
     y=672;
-    para([settings.abn ? "ABN " + settings.abn : "",settings.phone,settings.email].filter(Boolean).join("  |  "),{size:8,color:muted,gap:0});
-    if(settings.address) para(settings.address,{size:8,color:muted,gap:0});
-    y-=12;
+    para([settings.abn ? "ABN " + settings.abn : "",settings.phone,settings.email,settings.address].filter(Boolean).join("  |  "),{size:8,color:muted,gap:0});
+    y-=5;
     const top=y;
     const leftLines=[c.company && c.company !== "None" ? c.company : "",c.name,c.abn ? "ABN " + c.abn : "",c.billing_address,c.email,c.phone,ctx.customer?.number].filter(Boolean).flatMap(v=>wrap(v,230,9));
     const jobLines=(ctx.credit ? [d.number,b.title] : [b.title || j.data?.title || "Job details",b.site_address,j.number]).filter(Boolean).flatMap(v=>wrap(v,230,9));
     const cardHeight = Math.max(leftLines.length,jobLines.length)*13+43;
-    page.drawRectangle({x:40,y:top-cardHeight,width:515,height:cardHeight,color:light});
-    page.drawLine({start:{x:299,y:top-14},end:{x:299,y:top-cardHeight+14},thickness:0.6,color:rgb(0.85,0.82,0.76)});
+    page.drawRectangle({x:40,y:top-cardHeight,width:515,height:cardHeight,color:light,borderColor:grid,borderWidth:0.65});
+    page.drawLine({start:{x:299,y:top},end:{x:299,y:top-cardHeight},thickness:0.6,color:grid});
+    page.drawLine({start:{x:40,y:top-27},end:{x:555,y:top-27},thickness:0.6,color:grid});
     text(d.kind === "invoice" ? "BILLED TO" : "PREPARED FOR",54,top-19,8,bold,gold);
     text(ctx.credit ? "RELATED INVOICE" : "PROJECT DETAILS",313,top-19,8,bold,gold);
     leftLines.forEach((line,n)=>text(line,54,top-38-n*13,9,n===0?bold:regular));
@@ -220,25 +233,23 @@
         section("Work summary");
         para(b.summary);
       }
-      if (b.scope?.length) {
+      const shortScope = b.scope?.length && wrap(b.scope.map((s,i)=>`${i+1}. ${s}`).join("\n"),495,9).length <= 5;
+      const scopeOnPricingPage = shortScope && y > 450;
+      if (scopeOnPricingPage) {
         section("Scope of works");
-        b.scope.forEach((s, i) => para(`${i + 1}. ${s}`));
+        para(b.scope.map((s,i)=>`${i+1}. ${s}`).join("\n"));
       }
-      for (const [key, label] of [
-        ["exclusions", "Exclusions"],
-        ["assumptions", "Material assumptions"],
-        ["notes", "Additional notes"],
-      ])
-        if (b[key] && (d.kind !== "quote" || key === "notes")) {
-          section(label);
-          para(b[key]);
-        }
-      for (const [category, label] of (d.kind === "invoice" ? [[null, "Itemised charges"]] : [
-        ["labour", "Labour"],
-        ["materials", "Materials"],
-        ["additional", "Additional costs"],
-        ["variation", "Variations"],
-      ])) {
+      const receiptRows = d.kind === "invoice" ? (ctx.payments || []).filter(p => p.invoice_id === d.id).length : 0;
+      const summaryRows = 2 + Number(!!t.adjustment_cents) + Number(!!t.fee_cents) + Number(!!t.discount_cents)
+        + (d.kind === "invoice" ? receiptRows + Number(!!d.credit_cents) : 2);
+      const summaryHeight = 90 + summaryRows * 18 + (d.kind === "invoice" ? 36 : 0)
+        + (b.tax !== "taxable" ? wrap("Tax treatment: " + b.tax + " - " + (b.tax_reason || "Basis not supplied"),495,8).length * 12 + 15 : 0);
+      const itemHeight = t.items.reduce((sum,i) => sum + Math.max(wrap(i.description || "Description not provided",258,9).length,wrap(String(i.quantity)+" "+(i.unit || ""),70,8).length)*14+10,0);
+      // Keep an ordinary cost table and its complete totals together. Oversized
+      // lists paginate at a readable size instead of shrinking or clipping.
+      const pricingHeight = 78 + itemHeight + summaryHeight;
+      if (pricingHeight <= 691) ensure(pricingHeight);
+      for (const [category, label] of [[null, "Itemised costs"]]) {
         const items = category === null ? t.items : t.items.filter((i) => i.category === category);
         if (!items.length) continue;
         ensure(78); // Keep the category heading, table header and first row together.
@@ -265,6 +276,9 @@
               continue;
             }
             const chunk = lines.slice(offset, offset + Math.min(capacity, 45));
+            const rowHeight = chunk.length * 14 + 10;
+            page.drawRectangle({x:40,y:y-rowHeight+12,width:515,height:rowHeight,borderColor:grid,borderWidth:0.55});
+            for (const x of [309,389,475]) page.drawLine({start:{x,y:y+12},end:{x,y:y-rowHeight+12},color:grid,thickness:0.5});
             chunk.forEach((l, n) => text(l, 46, y - n * 14));
             quantityLines
               .slice(offset, offset + chunk.length)
@@ -280,7 +294,6 @@
               tableHeader();
             }
           }
-          page.drawLine({start:{x:40,y:y+3},end:{x:555,y:y+3},thickness:0.4,color:light});
           y-=5;
         }
       }
@@ -300,7 +313,7 @@
         right("AMOUNT", 549, y + 2, 7, bold, gold);
         y -= 29;
       }
-      ensure(d.kind === "invoice" ? 225 : 178);
+      ensure(Math.min(summaryHeight, 691));
       section("Price summary");
       if (b.price_mode === "inclusive")
         para("Entered cost rows include GST where applicable.", {
@@ -414,6 +427,8 @@
             money(t.total_cents - t.deposit_cents),
           );
       }
+      // Supporting information always starts after the pricing pages.
+      newPage();
       if (d.kind === "booking") {
         section("Booking details");
         para(
@@ -448,35 +463,28 @@
             money(t.deposit_cents) +
             ". A requested deposit is not a recorded payment.",
         );
-        for (const [key, label] of [
-          ["exclusions", "Exclusions"],
-          ["assumptions", "Material assumptions"],
-        ])
-          if (b[key]) {
-            section(label);
-            para(b[key]);
-          }
       }
+      for (const [key, label] of [["exclusions","Exclusions"],["assumptions","Material assumptions"]]) {
+        if (b[key]) { section(label); para(b[key]); }
+      }
+      if (d.kind === "quote") {
+        section("Customer acceptance (optional)");
+        para("Name: __________________________________________\nSignature: _______________________________________\nDate: ___________________________________________", {color:muted});
+      }
+      if (b.scope?.length && !scopeOnPricingPage) {
+        section("Scope of works");
+        para(b.scope.map((s,i)=>`${i+1}. ${s}`).join("\n"));
+      }
+      if (b.notes) { section("Additional notes"); para(b.notes); }
       if (b.terms) {
-        const termsLines=wrap(b.terms,515,8.5);
-        if(termsLines.length*12+65 > y-65 && y < 600) newPage();
+        const termsLines=wrap(b.terms,495,8.5);
+        if(termsLines.length*12.5+45 > y-65 && y < 600) newPage();
         section("Terms & conditions");
-        for(const paragraph of String(b.terms).split("\n")) {
-          const heading=/^\d+\. /.test(paragraph);
-          if(heading) ensure(48);
-          para(paragraph,{size:8.5,font:heading?bold:regular,color:heading?ink:muted,gap:heading?0:6});
-        }
+        para(b.terms,{size:8.5,color:muted,gap:6});
       }
       if (d.kind === "booking" && b.special_instructions) {
         section("Special instructions");
         para(b.special_instructions);
-      }
-      if (d.kind === "quote") {
-        section("Customer acceptance (optional)");
-        para(
-          "Name: __________________________________________\nSignature: _______________________________________\nDate: ___________________________________________",
-          { color: muted },
-        );
       }
       if (b.use_signature) {
         section("Authorisation");
