@@ -1,3 +1,5 @@
+> Production hosting update (25 October 2026): use [Netlify Free deployment instructions](NETLIFY_DEPLOYMENT.md). The GitHub Pages section below is retained as earlier setup context and is not the recommended host for this authenticated business portal.
+
 # Krishna's Construction business management portal
 
 A private carpentry business application with a plain HTML/CSS/vanilla JavaScript frontend and Supabase Auth/PostgreSQL/private Storage. It includes customers, multiple jobs per customer, fixed/hourly/cost-plus quotes, booking confirmations, invoices, deposits/final receipts, payment reminders and branded A4 PDFs.

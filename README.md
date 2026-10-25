@@ -2,7 +2,7 @@
 
 A private business management app for Eric Krishna's carpentry business. It keeps customer details, jobs, quotes, bookings, invoices and payments together so information does not need to be entered repeatedly.
 
-The website uses plain HTML, CSS and JavaScript. Supabase provides secure login and the private database. GitHub Pages hosts the website files.
+The website uses plain HTML, CSS and JavaScript. Supabase provides secure login and the private database. The source stays on GitHub; Netlify Free is the recommended production host for the website files.
 
 ## What it includes
 
@@ -39,7 +39,7 @@ See the [step-by-step setup guide](docs/SETUP_GUIDE.md) for the exact instructio
 
 ## Put the code on GitHub
 
-Create a new empty repository called `krishnas-construction-portal`. Choose **Public** for GitHub Pages on GitHub Free, or **Private** if your plan supports Pages for private repositories. Do not add a README, .gitignore or licence on GitHub when creating it: the local project already has its files.
+Create a new empty repository called `krishnas-construction-portal`. Your existing public repository can stay public; the private customer database is held separately in Supabase. Do not add a README, .gitignore or licence on GitHub when creating it: the local project already has its files.
 
 After the local first commit, connect your own repository URL and push using plain Git:
 
@@ -50,15 +50,19 @@ git push -u origin main
 
 Do not run these example commands until your repository exists. GitHub may ask you to sign in. Do not put passwords or tokens in the URL.
 
-## Deploy with GitHub Pages
+## Deploy with Netlify Free
 
-1. In the repository, open **Settings → Pages** and select **GitHub Actions** as the source.
-2. Add the repository Actions variables `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` using your public connection values.
-3. In **Actions**, run **Publish approved portal**.
-4. Add the final website URL to Supabase's allowed login/recovery addresses.
-5. Complete the [live acceptance checklist](docs/CLIENT_APPROVAL_CHECKLIST.md).
+Use the [click-by-click Netlify guide](docs/NETLIFY_DEPLOYMENT.md). The repository includes `netlify.toml`, which selects:
 
-The deployment runs only when you start it manually. Pushing code does not automatically publish the site. Supabase and GitHub free-tier limits can change; the setup guide links to the providers' current information.
+- Branch: `main`
+- Build command: `node scripts/prepare-pages.mjs`
+- Publish directory: `dist`
+
+Add `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` in Netlify's environment variables before publishing. These are public browser connection values; never supply a secret/service-role key or database password. There is no npm installation or framework compilation. The command only prepares static files and the public configuration.
+
+Netlify Free permits commercial projects and provides a free `netlify.app` address and HTTPS, subject to its current usage limits. GitHub Pages is not the recommended production host for this authenticated business application under its published usage rules; Vercel Hobby is for personal, non-commercial use.
+
+After deploying, update Supabase's Site URL and allowed recovery redirect URL to the actual HTTPS address, then complete the [live acceptance checklist](docs/CLIENT_APPROVAL_CHECKLIST.md). Netlify normally publishes subsequent pushes to `main` automatically once the repository is connected.
 
 ## Keep private files off GitHub
 
@@ -66,15 +70,15 @@ The deployment runs only when you start it manually. Pushing code does not autom
 
 ## Project folders
 
-| Folder | Purpose |
-|---|---|
-| `css/` | Colours, spacing and responsive layouts |
-| `js/` | Forms, login, database calls, calculations and PDFs |
-| `assets/` | Official logo and public website assets |
+| Folder                 | Purpose                                                |
+| ---------------------- | ------------------------------------------------------ |
+| `css/`                 | Colours, spacing and responsive layouts                |
+| `js/`                  | Forms, login, database calls, calculations and PDFs    |
+| `assets/`              | Official logo and public website assets                |
 | `supabase/migrations/` | Database tables, security rules and document numbering |
-| `scripts/` | Optional local preview and deployment packaging |
-| `tests/` | Calculation, database, interface and PDF checks |
-| `docs/` | Detailed setup, security and user guides |
+| `scripts/`             | Optional local preview and deployment packaging        |
+| `tests/`               | Calculation, database, interface and PDF checks        |
+| `docs/`                | Detailed setup, security and user guides               |
 
 ## Testing status
 

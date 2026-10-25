@@ -1,0 +1,12 @@
+# Plain static HTML: no npm install, framework or frontend compilation.
+[build]
+  command = "node scripts/prepare-pages.mjs"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+  KC_REQUIRE_BACKEND = "true"
+
+# Keep the project's existing .html links and relative asset paths intact.
+[build.processing.html]
+  pretty_urls = false
