@@ -162,18 +162,14 @@
       y -= 12;
     }
     function summary(label, value, grand = false) {
-      ensure(grand ? 45 : 22);
-      if (grand) {
-        y -= 4;
-        page.drawRectangle({x: 294, y: y - 12, width: 261, height: 34, color: charcoal});
-      }
-      else {
-        page.drawRectangle({x:294,y:y-7,width:261,height:18,borderColor:grid,borderWidth:0.5});
-        page.drawLine({start:{x:462,y:y-7},end:{x:462,y:y+11},color:grid,thickness:0.5});
-      }
-      text(label, grand ? 306 : 300, y, grand ? 10 : 9, grand ? bold : regular, grand ? rgb(1,1,1) : muted);
-      right(value, 545, y, grand ? 13 : 9, grand ? bold : regular, grand ? rgb(0.91,0.73,0.44) : ink);
-      y -= grand ? 36 : 18;
+      const height = grand ? 34 : 24;
+      ensure(height);
+      page.drawRectangle({x:40,y:y-height,width:515,height,
+        color:grand ? charcoal : rgb(1,1,1),borderColor:grid,borderWidth:0.55});
+      if (!grand) page.drawLine({start:{x:435,y},end:{x:435,y:y-height},color:grid,thickness:0.55});
+      text(label,50,y-(grand?22:16),grand?10:9,grand?bold:regular,grand?rgb(1,1,1):ink);
+      right(value,545,y-(grand?22:16),grand?13:9,grand?bold:regular,grand?rgb(0.91,0.73,0.44):ink);
+      y-=height;
     }
     const dateLabel = value => {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return value || "To be confirmed";
@@ -242,7 +238,7 @@
       const receiptRows = d.kind === "invoice" ? (ctx.payments || []).filter(p => p.invoice_id === d.id).length : 0;
       const summaryRows = 2 + Number(!!t.adjustment_cents) + Number(!!t.fee_cents) + Number(!!t.discount_cents)
         + (d.kind === "invoice" ? receiptRows + Number(!!d.credit_cents) : 2);
-      const summaryHeight = 90 + summaryRows * 18 + (d.kind === "invoice" ? 36 : 0)
+      const summaryHeight = 90 + summaryRows * 24 + (d.kind === "invoice" ? 36 : 0)
         + (b.tax !== "taxable" ? wrap("Tax treatment: " + b.tax + " - " + (b.tax_reason || "Basis not supplied"),495,8).length * 12 + 15 : 0);
       const itemHeight = t.items.reduce((sum,i) => sum + Math.max(wrap(i.description || "Description not provided",258,9).length,wrap(String(i.quantity)+" "+(i.unit || ""),70,8).length)*14+10,0);
       // Keep an ordinary cost table and its complete totals together. Oversized
@@ -299,19 +295,12 @@
       }
       function tableHeader() {
         ensure(60);
-        y -= 5; // Leave the category label clear of the header background.
-        page.drawRectangle({
-          x: 40,
-          y: y - 7,
-          width: 515,
-          height: 25,
-          color: charcoal,
-        });
-        text("DESCRIPTION", 46, y + 2, 7, bold, gold);
-        right("QTY / HOURS", 383, y + 2, 7, bold, gold);
-        right("UNIT PRICE", 469, y + 2, 7, bold, gold);
-        right("AMOUNT", 549, y + 2, 7, bold, gold);
-        y -= 29;
+        page.drawRectangle({x:40,y:y-20,width:515,height:25,color:charcoal});
+        text("DESCRIPTION",46,y-11,7,bold,gold);
+        right("QTY / HOURS",383,y-11,7,bold,gold);
+        right("UNIT PRICE",469,y-11,7,bold,gold);
+        right("AMOUNT",549,y-11,7,bold,gold);
+        y-=32;
       }
       ensure(Math.min(summaryHeight, 691));
       section("Price summary");
@@ -321,8 +310,9 @@
           color: muted,
         });
       else para("Entered cost rows exclude GST.", { size: 8, color: muted });
-      const pricePage = page,
-        paidMarkY = y;
+      if (b.tax !== "taxable") para("Tax treatment: " + b.tax + " - " + (b.tax_reason || "Basis not supplied"), {size:8,color:muted});
+      y -= 8;
+      let paidReceipt = null;
       if (t.adjustment_cents)
         summary("Fixed price adjustment", money(t.adjustment_cents));
       if (t.fee_cents) summary("Cost-plus fee", money(t.fee_cents));
@@ -336,14 +326,6 @@
         money(t.total_cents),
         true,
       );
-      if (b.tax !== "taxable")
-        para(
-          "Tax treatment: " +
-            b.tax +
-            " — " +
-            (b.tax_reason || "Basis not supplied"),
-          { size: 8, color: muted },
-        );
       const payments = ctx.payments || [];
       if (d.kind === "invoice") {
         const paid = payments.filter((p) => p.invoice_id === d.id),
@@ -364,44 +346,8 @@
           bal.paid > 0 &&
           !sample
         ) {
-          const besideTotals =
-            page === pricePage && paidMarkY > 170 && b.tax === "taxable";
-          if (!besideTotals) ensure(75);
-          const stampY = besideTotals ? paidMarkY - 70 : y;
-          page.drawRectangle({
-            x: 40,
-            y: stampY - 24,
-            width: 112,
-            height: 40,
-            borderColor: rgb(0.25, 0.42, 0.29),
-            borderWidth: 1.8,
-            color: rgb(1, 1, 1),
-            rotate: degrees(-4),
-          });
-          text("PAID", 53, stampY - 7, 24, bold, rgb(0.25, 0.42, 0.29));
-          if (!besideTotals) y -= 52;
-          const date = paid
-            .map((p) => p.paid_date)
-            .sort()
-            .at(-1);
-          if (besideTotals) {
-            text("Paid date: " + date, 40, stampY - 48, 8, regular, muted);
-            text(
-              "Total received: " + money(bal.paid),
-              40,
-              stampY - 61,
-              8,
-              regular,
-              muted,
-            );
-          } else
-            para(
-              "Paid date: " + date + " · Total received: " + money(bal.paid),
-              {
-                size: 9,
-                color: muted,
-              },
-            );
+          paidReceipt = { date: paid.map(p=>p.paid_date).sort().at(-1), amount: bal.paid };
+
         }
       } else {
         summary("Deposit requested", money(t.deposit_cents));
@@ -429,6 +375,11 @@
       }
       // Supporting information always starts after the pricing pages.
       newPage();
+      if (paidReceipt) {
+        section("Payment received");
+        para("PAID IN FULL  |  Paid date: " + dateLabel(paidReceipt.date) + "  |  Total received: " + money(paidReceipt.amount), {font:bold});
+      }
+
       if (d.kind === "booking") {
         section("Booking details");
         para(

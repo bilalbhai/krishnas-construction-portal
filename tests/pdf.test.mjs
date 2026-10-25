@@ -148,6 +148,11 @@ test("A4 vector PDFs, long scopes, paid and draft variants", async () => {
         { ...base, body: { ...body, scope: [], use_signature: false, use_stamp: false } },
         { ...ctx, sample: false, credit: { number: "KC-CN-TEST", created_at: "2026-10-25", reason: "TEST ONLY agreed adjustment", amount_cents: 1100, gst_cents: 100 } },
       ],
+      [
+        "zero-gst-quote-spacing",
+        { ...base, kind: "quote", body: { ...body, scope: [], tax: "other", tax_reason: "TEST ONLY zero GST basis", terms: "TEST ONLY", use_signature: false, use_stamp: false }, totals: calculate({ ...body, tax: "other" }) },
+        ctx,
+      ],
     ]) {
       const bytes = new Uint8Array(
         await (await makePDF(doc, context)).arrayBuffer(),
