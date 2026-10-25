@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#1f1f1f" />
+    <meta name="kc-portal" content="1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://esm.sh https://*.supabase.co wss://*.supabase.co; frame-src blob: 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <meta
+      name="description"
+      content="Private business portal for Krishna's Construction"
+    />
+    <title>Krishna's Construction | Workspace</title>
+    <link rel="icon" href="assets/logo/krishnas-construction.png" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body data-page="customer">
+    <div id="app">
+      <div class="loading">
+        <h1>Krishna's Construction</h1>
+        <p>Opening your workspace…</p>
+        <p>
+          If this message remains visible, enable JavaScript or use Preview
+          Portal.cmd.
+        </p>
+      </div>
+    </div>
+    <noscript><p>JavaScript must be enabled to use the portal.</p></noscript>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <dialog id="modal"></dialog>
+    <script src="js/config.example.js"></script>
+    <script src="js/config.js"></script>
+    <script src="assets/logo/logo-data.js"></script>
+    <script src="assets/pdf-lib.min.js"></script>
+    <script src="js/calculations.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/customers.js"></script>
+    <script src="js/jobs.js"></script>
+    <script src="js/quotes.js"></script>
+    <script src="js/bookings.js"></script>
+    <script src="js/invoices.js"></script>
+    <script src="js/pdf.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/startup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+# Keep source text consistent on Windows and GitHub Pages.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
